@@ -1,7 +1,19 @@
+
+# Optionally adjust the measurement timing budget to change speed and accuracy.
+# See the example here for more details:
+#   https://github.com/pololu/vl53l0x-arduino/blob/master/examples/Single/Single.ino
+# For example a higher speed but less accurate timing budget of 20ms:
+# vl53.measurement_timing_budget = 20000
+# Or a slower but more accurate timing budget of 200ms:
+# vl53.measurement_timing_budget = 200000
+# The default timing budget is 33ms, a good compromise of speed and accuracy.
+
 import smbus
+import adafruit_vl53l0x
 import time
 import board
 import digitalio
+import busio
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
@@ -22,6 +34,8 @@ while True:
 
     # Use for I2C.
     i2c = board.I2C()
+    i2cvl = busio.I2C(board.SCL, board.SDA)
+    vl53 = adafruit_vl53l0x.VL53L0X(i2cvl)
     oled = adafruit_ssd1306.SSD1306_I2C(WIDTH, HEIGHT, i2c, addr=0x3C, reset=oled_reset)
 
     # Clear display.
@@ -70,19 +84,29 @@ while True:
     # Convert to str the float.
     cTemp = format(cTemp, '.2f') + " C"
     humidity = format(humidity, '.2f') + " %"
+    
+    # Measure distance
+#    vl53.measurement_timing_budget = 200000
+#    distance = format(vl53.range, '.2f') + " mm"
 
     # Draw Some Text
     text = cTemp
     (font_width, font_height) = font.getsize(text)
     draw.text(
-        (oled.width // 2 - font_width // 2, oled.height // 2 - font_height // 2),
+        (oled.width // 2 - font_width // 2, 15),
         cTemp,
         font=font,
         fill=255,
     )
     draw.text(
-        (oled.width // 2 - font_width // 2, oled.height // 4 - font_height // 4),
+        (oled.width // 2 - font_width // 2, 25),
         humidity,
+        font=font,
+        fill=255,
+    )
+    draw.text(
+        (oled.width // 2 - font_width // 2, 35),
+        distance,
         font=font,
         fill=255,
     )
@@ -91,7 +115,10 @@ while True:
     oled.image(image)
     oled.show()
 
-    # print("Humidity: " + humidity)
-    # print("Temperature: " + cTemp)
+    # print ("Humidity %%RH: %.2f%%" %humidity)
+    print("Humidity: " + humidity)
+    print("Temperature: " + cTemp)
+    # print("Distance: " + distance)
+    # print ("Temperature: %.2f°C" %cTemp)
 
-    time.sleep(30)
+    time.sleep(10)
