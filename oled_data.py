@@ -86,8 +86,8 @@ while True:
     humidity = format(humidity, '.2f') + " %"
     
     # Measure distance
-#    vl53.measurement_timing_budget = 200000
-#    distance = format(vl53.range, '.2f') + " mm"
+    vl53.measurement_timing_budget = 200000
+    distance = format(vl53.range, '.2f') + " mm"
 
     # Draw Some Text
     text = cTemp
@@ -118,7 +118,7 @@ while True:
     # print ("Humidity %%RH: %.2f%%" %humidity)
     print("Humidity: " + humidity)
     print("Temperature: " + cTemp)
-    # print("Distance: " + distance)
+    print("Distance: " + distance)
     # print ("Temperature: %.2f°C" %cTemp)
 
-    time.sleep(10)
+    time.sleep(1)
