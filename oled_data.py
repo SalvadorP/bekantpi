@@ -37,24 +37,20 @@ draw.rectangle((0, 0, width, height), outline=0, fill=0)
 # Load default font.
 font = ImageFont.load_default()
 
+# Instantiate the bus for the sh7021
 bus = smbus.SMBus(1)
 
-# Draw text.
-# draw.text((0, 5), "UCTRONICS", font=font, fill=255)
-
-# Display image.
+# Display image. Clear screen.
 disp.image(image)
 disp.show()
 
-# Pause briefly before drawing next frame.
-# time.sleep(3)
+# Load default font.
 font = ImageFont.load_default()
 
 # Draw some shapes.
 # First define some constants to allow easy resizing of shapes.
 padding = -2
 top = padding
-bottom = height - padding
 
 # Move left to right keeping track of the current x position for drawing shapes.
 x = 5
@@ -77,8 +73,6 @@ while True:
     #what really happens here is that master sends a 0xE3 command (measure temperature, hold master mode) and read 2 bytes back
     #if you read 3 bytes the last one is the CRC!
 
-    # time.sleep(0.05)
-
     # Convert the data
     temperature = ((temp[0] * 256 + temp[1]) * 175.72 / 65536.0) - 46.85
 
@@ -87,25 +81,25 @@ while True:
     humidity = "Humd: " + format(humidity, '.2f') + " %"
 
     # Measure distance
-    vl53.measurement_timing_budget = 200000
+    # vl53.measurement_timing_budget = 200000
     distance = "Dist: " + format(vl53.range, '.2f') + " mm"
-
 
     # Draw a black filled box to clear the image.
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
-    cmd1 = "hostname"
-    cmd2 = "hostname -I | cut -d' ' -f1"
-    hostname = subprocess.check_output(cmd1, shell=True).decode("utf-8")
-    ip = subprocess.check_output(cmd2, shell=True).decode("utf-8")
-    cmd = "top -bn1 | grep load | awk '{printf \"Load: %.2f\", $(NF-2)}'"
-    cpu_load = subprocess.check_output(cmd, shell=True).decode("utf-8")
-    cmd = "free -m | awk 'NR==2{printf \"Mem: %.0f%%\", $3*100/$2}'"
-    sys_mem = subprocess.check_output(cmd, shell=True).decode("utf-8")
 
+    # Retrieve the system data, like hostname, ip, cpu load and mem.
+    cmd_hostname = "hostname"
+    cmd_ip = "hostname -I | cut -d' ' -f1"
+    hostname = subprocess.check_output(cmd_hostname, shell=True).decode("utf-8")
+    ip = subprocess.check_output(cmd_ip, shell=True).decode("utf-8")
+    cmd_load = "top -bn1 | grep load | awk '{printf \"Load: %.2f\", $(NF-2)}'"
+    cpu_load = subprocess.check_output(cmd_load, shell=True).decode("utf-8")
+    cmd_mem = "free -m | awk 'NR==2{printf \"Mem: %.0f%%\", $3*100/$2}'"
+    sys_mem = subprocess.check_output(cmd_mem, shell=True).decode("utf-8")
 
     # Write four lines of text.
     draw.text((x, top + 5),  hostname, font=font, fill=255)
-    draw.text((x + 50, top + 5),  ip, font=font, fill=255)
+    draw.text((x + 52, top + 5),  ip, font=font, fill=255)
     draw.text((x, top + 15), cpu_load, font=font, fill=255)
     draw.text((x + 70, top + 15), sys_mem, font=font, fill=255)
     draw.text((x, top + 30),  temperature, font=font, fill=255)
@@ -115,4 +109,4 @@ while True:
     # Display image.
     disp.image(image)
     disp.show()
-    time.sleep(0.300)
+    time.sleep(0.1)
