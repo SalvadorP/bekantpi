@@ -90,18 +90,23 @@ while True:
     # Retrieve the system data, like hostname, ip, cpu load and mem.
     cmd_hostname = "hostname"
     cmd_ip = "hostname -I | cut -d' ' -f1"
+    cmd_cpu_temp = "cat /sys/class/thermal/thermal_zone0/temp"
+    cpu_temp = subprocess.check_output(cmd_cpu_temp, shell=True).decode("utf-8")
+    cpu_temp = "T:" + cpu_temp[0:2]
     hostname = subprocess.check_output(cmd_hostname, shell=True).decode("utf-8")
     ip = subprocess.check_output(cmd_ip, shell=True).decode("utf-8")
-    cmd_load = "top -bn1 | grep load | awk '{printf \"Load: %.2f\", $(NF-2)}'"
+    cmd_load = "top -bn1 | grep load | awk '{printf \"L:%.2f\", $(NF-2)}'"
     cpu_load = subprocess.check_output(cmd_load, shell=True).decode("utf-8")
-    cmd_mem = "free -m | awk 'NR==2{printf \"Mem: %.0f%%\", $3*100/$2}'"
+    cmd_mem = "free -m | awk 'NR==2{printf \"M:%.0f%%\", $3*100/$2}'"
     sys_mem = subprocess.check_output(cmd_mem, shell=True).decode("utf-8")
+
 
     # Write four lines of text.
     draw.text((x, top + 5),  hostname, font=font, fill=255)
     draw.text((x + 52, top + 5),  ip, font=font, fill=255)
     draw.text((x, top + 15), cpu_load, font=font, fill=255)
-    draw.text((x + 70, top + 15), sys_mem, font=font, fill=255)
+    draw.text((x + 50, top + 15), cpu_temp, font=font, fill=255)
+    draw.text((x + 85, top + 15), sys_mem, font=font, fill=255)
     draw.text((x, top + 30),  temperature, font=font, fill=255)
     draw.text((x, top + 42), humidity, font=font, fill=255)
     draw.text((x, top + 53), distance, font=font, fill=255)
