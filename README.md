@@ -23,7 +23,7 @@ pip3 install adafruit-circuitpython-si7021
  - pip3 install adafruit-circuitpython-bme280
  - pip3 install adafruit-circuitpython-bmp280
  - pip3 install adafruit-circuitpython-ahtx0
-pip3 install pyowm
+pip3 install requests
 
 ## Libraries to install via apt 
 sudo apt install i2c-tools python3-pil python3-numpy python3-gpiozero mosquitto-clients
@@ -41,4 +41,6 @@ Adafruit script to control the temp and humidity, not working properly, investig
 Script to control the vl53l0x ToF sensor, for distance.
 ### ssd1306.py
 Adafruit script to control the monochromatic OLED of 128x64 lines.
+### owm.py
+Open Weather Map script that using the OWM API retrieves the meteo data for the given city ID.
 
