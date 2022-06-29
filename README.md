@@ -20,10 +20,13 @@ In case of a dietpi put 1000Khz on i2c settings.
 ## Python libraries to install via pip
 pip3 install adafruit-circuitpython-ssd1306
 pip3 install adafruit-circuitpython-si7021
-pip3 install adafruit-circuitpython-bme280
+ - pip3 install adafruit-circuitpython-bme280
+ - pip3 install adafruit-circuitpython-bmp280
+ - pip3 install adafruit-circuitpython-ahtx0
+pip3 install pyowm
 
 ## Libraries to install via apt 
-sudo apt install i2c-tools python3-pil python3-numpy
+sudo apt install i2c-tools python3-pil python3-numpy python3-gpiozero mosquitto-clients
 
 ## Files
 ### lights.py
