@@ -44,9 +44,6 @@ bus = smbus.SMBus(1)
 disp.image(image)
 disp.show()
 
-# Load default font.
-font = ImageFont.load_default()
-
 # Draw some shapes.
 # First define some constants to allow easy resizing of shapes.
 padding = -2
