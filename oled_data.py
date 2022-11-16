@@ -9,6 +9,41 @@ import smbus
 import adafruit_vl53l0x
 import board
 import digitalio
+import time
+import requests
+import json
+from pprint import pprint
+from datetime import datetime
+
+# Read the config file.
+def getConfig():
+    with open("owm_config.json", "r") as jsonfile:
+        data = json.load(jsonfile)
+        jsonfile.close()
+    return data
+
+# Retrieve weather data.
+def getWeatherData(data):
+    # API KEY
+    API_key = data['api_key']
+
+    # This stores the url
+    base_url = data['owm_url']
+
+    # This will ask the user to enter city ID
+    city_id = data['city_id']
+
+    # This is final url. This is concatenation of base_url, API_key and city_id
+    Final_url = base_url + "appid=" + API_key + "&id=" + city_id + "&units=metric"
+
+    # this variable contain the JSON data which the API returns
+    return  requests.get(Final_url).json()
+
+# Retrieve OWM configuration.
+owmConfig = getConfig()
+
+# timeformat
+TIMEFORMAT = "%H:%M"
 
 # Define OLED Sizes.
 WIDTH = 128
@@ -52,6 +87,20 @@ top = padding
 # Move left to right keeping track of the current x position for drawing shapes.
 x = 5
 
+timestamp = int(round(time.time() * 1000))
+
+weather_data = getWeatherData(owmConfig)
+
+# Initialize the data from OWM.
+outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
+outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
+outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
+wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
+weatherDescription = weather_data['weather'][0]['description']
+sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
+sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+
 while True:
     # Measure temp and humidity
     # SI7021 address, 0x40(64)
@@ -59,9 +108,9 @@ while True:
     rh = bus.read_i2c_block_data(0x40, 0xE5, 2)
     #what really happens here is that master sends a 0xE5 command (measure RH, hold master mode) and read 2 bytes back
     #if you read 3 bytes the last one is the CRC!
-#    time.sleep(0.1)
+    # time.sleep(0.1)
     # Convert the data
-    humidity = ((rh[0] * 256 + rh[1]) * 125 / 65536.0) - 6
+    insideHumidity = ((rh[0] * 256 + rh[1]) * 125 / 65536.0) - 6
 
 
     # SI7021 address, 0x40(64)
@@ -71,11 +120,11 @@ while True:
     #if you read 3 bytes the last one is the CRC!
 
     # Convert the data
-    temperature = ((temp[0] * 256 + temp[1]) * 175.72 / 65536.0) - 46.85
+    insideTemp = ((temp[0] * 256 + temp[1]) * 175.72 / 65536.0) - 46.85
 
     # Convert to str the float.
-    temperature = "Temp: " + format(temperature, '.2f') + " C"
-    humidity = "Humd: " + format(humidity, '.2f') + " %"
+    insideTemp = "iT:" + format(insideTemp, '.2f') + "C"
+    insideHumidity = "iH:" + format(insideHumidity, '.2f') + "%"
 
     # Measure distance
     # vl53.measurement_timing_budget = 200000
@@ -85,13 +134,9 @@ while True:
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
     # Retrieve the system data, like hostname, ip, cpu load and mem.
-    cmd_hostname = "hostname"
-    cmd_ip = "hostname -I | cut -d' ' -f1"
     cmd_cpu_temp = "cat /sys/class/thermal/thermal_zone0/temp"
     cpu_temp = subprocess.check_output(cmd_cpu_temp, shell=True).decode("utf-8")
     cpu_temp = "T:" + cpu_temp[0:2]
-    hostname = subprocess.check_output(cmd_hostname, shell=True).decode("utf-8")
-    ip = subprocess.check_output(cmd_ip, shell=True).decode("utf-8")
     cmd_load = "top -bn1 | grep load | awk '{printf \"L:%.2f\", $(NF-2)}'"
     cpu_load = subprocess.check_output(cmd_load, shell=True).decode("utf-8")
     cmd_mem = "free -m | awk 'NR==2{printf \"M:%.0f%%\", $3*100/$2}'"
@@ -99,14 +144,33 @@ while True:
 
 
     # Write four lines of text.
-    draw.text((x, top + 5),  hostname, font=font, fill=255)
-    draw.text((x + 52, top + 5),  ip, font=font, fill=255)
-    draw.text((x, top + 15), cpu_load, font=font, fill=255)
-    draw.text((x + 50, top + 15), cpu_temp, font=font, fill=255)
-    draw.text((x + 85, top + 15), sys_mem, font=font, fill=255)
-    draw.text((x, top + 30),  temperature, font=font, fill=255)
-    draw.text((x, top + 42), humidity, font=font, fill=255)
-    draw.text((x, top + 53), distance, font=font, fill=255)
+    newTimestamp = int(round(time.time() * 1000))
+    timeDifference = newTimestamp - timestamp
+    if (timeDifference > 3600000):
+        outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
+        outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
+        outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
+        wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
+        weatherDescription = weather_data['weather'][0]['description']
+        sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+        sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
+        sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+        timestamp = int(round(time.time() * 1000))
+
+    draw.text((x, top + 5), cpu_load, font=font, fill=255)
+    draw.text((x + 50, top + 5), cpu_temp, font=font, fill=255)
+    draw.text((x + 85, top + 5), sys_mem, font=font, fill=255)
+    # Ouside OWM Readings
+    draw.text((x, top + 15),  outsideTemp, font=font, fill=255)
+    draw.text((x + 45, top + 15),  outsideHumidity, font=font, fill=255)
+    draw.text((x + 85, top + 15),  outsideFL, font=font, fill=255)
+    draw.text((x, top + 25), wind, font=font, fill=255)
+    draw.text((x + 50, top + 25), weatherDescription, font=font, fill=255)
+    draw.text((x, top+35), sunRaiseDawn, font=font, fill=255)
+    # Inside Sensor Readings
+    draw.text((x, top + 45),  insideTemp, font=font, fill=255)
+    draw.text((x + 64, top + 45), insideHumidity, font=font, fill=255)
+    draw.text((x, top + 55), distance, font=font, fill=255)
 
     # Display image.
     disp.image(image)
