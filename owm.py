@@ -4,15 +4,12 @@ from pprint import pprint
 
 # Read the config file.
 def getConfig():
-    with open("config.json", "r") as jsonfile:
+    with open("owm_config.json", "r") as jsonfile:
         data = json.load(jsonfile)
         jsonfile.close()
     return data
 
-# data = getConfig()
-
-# pprint(data)
-
+# Retrieve weather data.
 def getWeatherData(data):
     # API KEY
     API_key = data['api_key']
@@ -21,7 +18,6 @@ def getWeatherData(data):
     base_url = data['owm_url']
 
     # This will ask the user to enter city ID
-    # city_id = input("Enter a city ID : ")
     city_id = data['city_id']
 
     # This is final url. This is concatenation of base_url, API_key and city_id
@@ -33,7 +29,7 @@ def getWeatherData(data):
 
 weather_data = getWeatherData(getConfig())
 # JSON data is difficult to visualize, so you need to pretty print
-# pprint(weather_data)
+pprint(weather_data)
 
 print("City = " + weather_data['name'])
 print('Weather = ' + weather_data['weather'][0]['description'])

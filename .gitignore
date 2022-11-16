@@ -131,3 +131,5 @@ dmypy.json
 # Config file.
 config.json
 
+owm_resp_example.json
+owm_config.json
