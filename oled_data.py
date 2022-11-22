@@ -90,16 +90,28 @@ x = 5
 timestamp = int(round(time.time() * 1000))
 
 weather_data = getWeatherData(owmConfig)
+dummy_weather_data = False
 
-# Initialize the data from OWM.
-outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
-outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
-outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
-wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
-weatherDescription = weather_data['weather'][0]['description']
-sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
-sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+if 'main' not in weather_data:
+    dummy_weather_data = True
+    outsideTemp = "oT: 0C"
+    outsideHumidity = "oH: 0%"
+    outsideFL = "FL: 0C"
+    wind = "W: 0KM/h"
+    weatherDescription = ""
+    sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+    sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
+    sunRiseDawn = "00:00 - 00:00"
+else :
+    # Initialize the data from OWM.
+    outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
+    outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
+    outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
+    wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
+    weatherDescription = weather_data['weather'][0]['description']
+    sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+    sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
+    sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
 
 while True:
     # Measure temp and humidity
@@ -142,19 +154,26 @@ while True:
     cmd_mem = "free -m | awk 'NR==2{printf \"M:%.0f%%\", $3*100/$2}'"
     sys_mem = subprocess.check_output(cmd_mem, shell=True).decode("utf-8")
 
-
-    # Write four lines of text.
+    # Check time
     newTimestamp = int(round(time.time() * 1000))
     timeDifference = newTimestamp - timestamp
+
+    # If the script launched on reboot and there was no wifi, launch it again.
+    if timeDifference > 30000 and dummy_weather_data:
+        dummy_weather_data = False
+        timeDifference = 4600000
+
+    # An hour passed, update the weather data.
     if (timeDifference > 3600000):
+        weather_data = getWeatherData(owmConfig)
         outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
         outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
         outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
         wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
         weatherDescription = weather_data['weather'][0]['description']
-        sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+        sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
         sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-        sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+        sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
         timestamp = int(round(time.time() * 1000))
 
     draw.text((x, top + 5), cpu_load, font=font, fill=255)
@@ -166,7 +185,7 @@ while True:
     draw.text((x + 85, top + 15),  outsideFL, font=font, fill=255)
     draw.text((x, top + 25), wind, font=font, fill=255)
     draw.text((x + 50, top + 25), weatherDescription, font=font, fill=255)
-    draw.text((x, top+35), sunRaiseDawn, font=font, fill=255)
+    draw.text((x, top+35), sunRiseDawn, font=font, fill=255)
     # Inside Sensor Readings
     draw.text((x, top + 45),  insideTemp, font=font, fill=255)
     draw.text((x + 64, top + 45), insideHumidity, font=font, fill=255)
