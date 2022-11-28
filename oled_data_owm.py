@@ -14,6 +14,7 @@ import requests
 import json
 from pprint import pprint
 from datetime import datetime
+import telebot
 
 # Read the config file.
 def getConfig():
@@ -97,9 +98,13 @@ outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
 outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
 wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
 weatherDescription = weather_data['weather'][0]['description']
-sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
 sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+
+# Instantiate the bot object and send initiate message
+bot = telebot.TeleBot(owmConfig['telegram_bot_token'])
+bot.send_message(owmConfig['telegram_bot_channel'], 'Oled OWM initiated.')
 
 while True:
     # Measure temp and humidity
@@ -156,10 +161,13 @@ while True:
         outsideFL = "FL:" + str(round(weather_data['main']['feels_like'])) + "C"
         wind = "W:" + str(round(weather_data['wind']['speed'])) + "KM/h"
         weatherDescription = weather_data['weather'][0]['description']
-        sunRaise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+        sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
         sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-        sunRaiseDawn = sunRaise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+        sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
         timestamp = int(round(time.time() * 1000))
+
+        message = "Outside Temp = " + str(round(weather_data['main']['temp'])) + " C\nOutside Humidity = " + format(weather_data['main']['humidity']) + "%\nFeels Like = " + str(round(weather_data['main']['feels_like'])) + "C\nWind = " + str(round(weather_data['wind']['speed'])) + " KM/h\n" + weatherDescription + "\n" + sunRiseDawn + "\nInside Temp = " + insideTemp + "\nInside Humidity = " + insideHumidity + "\nCPU = " + cpu_load + "\nCPU Temp = " + cpu_temp + "\nRAM = " + sys_mem + "\n"
+        bot.send_message(owmConfig['telegram_bot_channel'], message)
 
 
     # draw.text((x, top + 5),  hostname, font=font, fill=255)
@@ -173,7 +181,7 @@ while True:
     draw.text((x + 85, top + 15),  outsideFL, font=font, fill=255)
     draw.text((x, top + 25), wind, font=font, fill=255)
     draw.text((x + 50, top + 25), weatherDescription, font=font, fill=255)
-    draw.text((x, top+35), sunRaiseDawn, font=font, fill=255)
+    draw.text((x, top+35), sunRiseDawn, font=font, fill=255)
     # Inside Sensor Readings
     draw.text((x, top + 45),  insideTemp, font=font, fill=255)
     draw.text((x + 64, top + 45), insideHumidity, font=font, fill=255)
