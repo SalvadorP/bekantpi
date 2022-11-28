@@ -16,7 +16,7 @@ from pprint import pprint
 from pprint import pformat
 from datetime import datetime
 import logging
-
+import telebot
 
 # Configure the log file.
 logging.basicConfig(filename='/home/dietpi/devel/bekantpi/oled_data.log', filemode='a+', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s')
@@ -127,6 +127,10 @@ else :
     sunRiseDawn = sunRise.strftime(TIMEFORMAT) + "-" + sunDawn.strftime(TIMEFORMAT) + " / " + lastUpdate.strftime(TIMEFORMAT)
     logging.debug('In Weather Data.')
 
+# Instantiate the bot object and send initiate message
+bot = telebot.TeleBot(owmConfig['telegram_bot_token'])
+bot.send_message(owmConfig['telegram_bot_channel'], 'Oled OWM initiated.')
+
 while True:
     # Measure temp and humidity
     # SI7021 address, 0x40(64)
@@ -179,7 +183,8 @@ while True:
         logging.debug('has dummy weather data, retriving proper data after 30 secs.')
 
     # An hour passed, update the weather data.
-    if (timeDifference > 3600000):
+    # if (timeDifference > 3600000):
+    if (timeDifference > 300000) :
         logging.debug('An hour passed, update OWM data.')
         weather_data = getWeatherData(owmConfig)
         outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
@@ -192,6 +197,8 @@ while True:
         lastUpdate = datetime.fromtimestamp(weather_data['dt'])
         sunRiseDawn = sunRise.strftime(TIMEFORMAT) + "-" + sunDawn.strftime(TIMEFORMAT) + " / " + lastUpdate.strftime(TIMEFORMAT)
         timestamp = int(round(time.time() * 1000))
+        message = "Outside Temp = " + str(round(weather_data['main']['temp'])) + " C\nOutside Humidity = " + format(weather_data['main']['humidity']) + "%\nFeels Like = " + str(round(weather_data['main']['feels_like'])) + "C\nWind = " + str(round(weather_data['wind']['speed'])) + " KM/h\n" + weatherDescription + "\n" + sunRiseDawn + "\nInside Temp = " + insideTemp + "\nInside Humidity = " + insideHumidity + "\nCPU = " + cpu_load + "\nCPU Temp = " + cpu_temp + "\nRAM = " + sys_mem + "\n"
+        bot.send_message(owmConfig['telegram_bot_channel'], message)
 
     draw.text((x, top + 5), cpu_load, font=font, fill=255)
     draw.text((x + 50, top + 5), cpu_temp, font=font, fill=255)
