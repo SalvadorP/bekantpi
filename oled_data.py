@@ -13,17 +13,24 @@ import time
 import requests
 import json
 from pprint import pprint
+from pprint import pformat
 from datetime import datetime
+import logging
+
+
+# Configure the log file.
+logging.basicConfig(filename='/home/dietpi/devel/bekantpi/oled_data.log', filemode='a+', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 # Read the config file.
 def getConfig():
-    with open("owm_config.json", "r") as jsonfile:
+    with open("/home/dietpi/devel/bekantpi/owm_config.json", "r") as jsonfile:
         data = json.load(jsonfile)
         jsonfile.close()
     return data
 
 # Retrieve weather data.
 def getWeatherData(data):
+
     # API KEY
     API_key = data['api_key']
 
@@ -37,7 +44,11 @@ def getWeatherData(data):
     Final_url = base_url + "appid=" + API_key + "&id=" + city_id + "&units=metric"
 
     # this variable contain the JSON data which the API returns
-    return  requests.get(Final_url).json()
+    data = requests.get(Final_url).json()
+
+    logging.debug('Retrieved weather data.')
+    logging.debug(pformat(data))
+    return data
 
 # Retrieve OWM configuration.
 owmConfig = getConfig()
@@ -99,9 +110,10 @@ if 'main' not in weather_data:
     outsideFL = "FL: 0C"
     wind = "W: 0KM/h"
     weatherDescription = ""
-    sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
-    sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-    sunRiseDawn = "00:00 - 00:00"
+    # sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
+    # sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
+    sunRiseDawn = "00:00-00:00 / 00:00"
+    logging.debug('NOT in Weather Data.')
 else :
     # Initialize the data from OWM.
     outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
@@ -111,7 +123,9 @@ else :
     weatherDescription = weather_data['weather'][0]['description']
     sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
     sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-    sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+    lastUpdate = datetime.fromtimestamp(weather_data['dt'])
+    sunRiseDawn = sunRise.strftime(TIMEFORMAT) + "-" + sunDawn.strftime(TIMEFORMAT) + " / " + lastUpdate.strftime(TIMEFORMAT)
+    logging.debug('In Weather Data.')
 
 while True:
     # Measure temp and humidity
@@ -162,9 +176,11 @@ while True:
     if timeDifference > 30000 and dummy_weather_data:
         dummy_weather_data = False
         timeDifference = 4600000
+        logging.debug('has dummy weather data, retriving proper data after 30 secs.')
 
     # An hour passed, update the weather data.
     if (timeDifference > 3600000):
+        logging.debug('An hour passed, update OWM data.')
         weather_data = getWeatherData(owmConfig)
         outsideTemp = "oT:" + str(round(weather_data['main']['temp'])) + "C"
         outsideHumidity = "oH:" + format(weather_data['main']['humidity']) + "%"
@@ -173,7 +189,8 @@ while True:
         weatherDescription = weather_data['weather'][0]['description']
         sunRise = datetime.fromtimestamp(weather_data['sys']['sunrise'])
         sunDawn = datetime.fromtimestamp(weather_data['sys']['sunset'])
-        sunRiseDawn = sunRise.strftime(TIMEFORMAT) + " - " + sunDawn.strftime(TIMEFORMAT)
+        lastUpdate = datetime.fromtimestamp(weather_data['dt'])
+        sunRiseDawn = sunRise.strftime(TIMEFORMAT) + "-" + sunDawn.strftime(TIMEFORMAT) + " / " + lastUpdate.strftime(TIMEFORMAT)
         timestamp = int(round(time.time() * 1000))
 
     draw.text((x, top + 5), cpu_load, font=font, fill=255)
